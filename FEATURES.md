@@ -6,11 +6,11 @@ livedot shows a red, yellow or green dot for each configured service and offers 
 
 | | |
 |---|---|
-| **Registry version** | 0.12.1 |
-| **Last audited** | 2026-10-29 |
+| **Registry version** | 0.13.0 |
+| **Last audited** | 2026-11-23 |
 | **Coverage** | Complete: every surface in `README.md` and `specs/app.yml`. |
 | **Running instance** | The author's GNOME Wayland desktop, with `livedot.service` and `livedot-tray.service` in per-service layout watching a few dozen services: HTTP checks, user units, command checks with item actions and switch items, a prompt service with a button, and a `livedot stats` check. The GNOME extension runs with `shell_panel: false` for its Quick Settings tile. 🟢 rows are in use there; the rest were exercised from `target/debug/livedot` against throwaway services. |
-| **Feature count** | 31 catalogued |
+| **Feature count** | 32 catalogued |
 
 Build: ✅ Shipped · 🟡 Partial · ⚪ Planned. Deploy: 🟢 Live · 🔵 Built, not enabled.
 
@@ -43,7 +43,8 @@ Build: ✅ Shipped · 🟡 Partial · ⚪ Planned. Deploy: 🟢 Live · 🔵 Bui
 | `icon_size` and `hide_healthy`: top-bar app icon size and badge-free healthy icons, `SetIconSize`, `SetHideHealthy`, `livedot iconsize`, `livedot healthy` | ✅ | 🔵 | range refusal, refusal of the old `dot_size` key, persistence into a scratch `config.yml`, and the tray pixmaps (green logo unbadged, green plain dot unchanged, red logo badged, every item kept) were run on a private bus; the GNOME **Icon size** tile, the scaled top-bar logo and the hidden badge were syntax-checked only and have not been seen in a Shell |
 | Dots in the bar: hidden set in the daemon, `SetShown`, `livedot dots`, `show`, `hide` | ✅ | 🟢 | run on a private bus: hide, show, persistence across a restart, child refusal, an unknown line kept |
 | Tray **Dots…** checklist (`livedot dots --pick`) | ✅ | 🟢 | run with a stand-in zenity on a private bus; the real window has not been opened by a person; unticking a shown service and a missing zenity were not exercised |
-| GNOME **Dots** Quick Settings tile | ✅ | 🔵 | syntax-checked only; a Wayland Shell loads extension code at login, so the tile appears after the next login and has not been seen by a person |
+| GNOME **Dots** Quick Settings tile | ✅ | 🔵 | syntax-checked only; a Wayland Shell loads extension code at login, so the tile appears after the next login and has not been seen by a person; on GNOME 50 every flip sent hide and then show until 0.12.2, which ignores the re-emitted `toggled` (also in switch tiles and **Hide healthy dots**), installed and awaiting a login |
+| `panel_position`: GNOME top-bar dots left, center (after the clock) or right, `SetPanelPosition`, `livedot position`, **Position in the bar** in the Icon size tile | ✅ | 🔵 | daemon side run on a private bus (set, read back, saved to `config.yml`, kept across a restart, `middle` refused); live config set to `center`; the extension placing the buttons was syntax-checked only and takes effect at the next login |
 | `livedot stats` and `livedot stats show`: disks, memory, load, swap as switch rows, red under `--low-gb` on `/` | ✅ | 🟢 | one service, polled every 30s; the red path was run with `--low-gb 1000` from the shell, never live; picking a row was run through `livedot item` on a private bus, the live menu rows were never clicked by a person |
 | Vendored ksni 0.3.6 with `XAyatanaLabel` (`vendor/ksni`) | ✅ | 🟢 | the copy differs from the crates.io release only in `src/lib.rs`, `src/dbus_interface.rs` and `src/service.rs`; upstream fixes in later ksni releases are not picked up until the copy is refreshed |
 | Command line: `status`, `start`, `stop`, `restart` | ✅ | 🟢 | — |
