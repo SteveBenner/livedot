@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- |
 | dot-size-hide-healthy | partial | 2026-11-23T02:24:24Z | smk_0e773d0713b2 | Claim: dot_size scales the tray dot and hide_healthy drops green dots, both persisted into config.yml and published i... |
 | icon-size-hide-healthy | partial | 2026-11-23T03:39:19Z | smk_4e51bfb7922d | Claim: icon_size replaces dot_size and leaves status dots at 0.11.0 size; hide_healthy keeps every service and drops ... |
-| gnome-switch-rows | blocked | 2026-11-23T08:20:32Z | smk_b64fa8c852a2 | Switch rows in the Dots, Hide healthy and switch tiles sent a second, opposite call on GNOME 50; fix installed (exten... |
+| gnome-switch-rows | blocked | 2026-11-23T08:20:52Z | smk_1ecdb9467679 | Switch rows in the Dots, Hide healthy and switch tiles sent a second, opposite call on GNOME 50; fix installed (exten... |
 
 ## Ledger
 
@@ -135,8 +135,8 @@ entries:
     policy_digest:
   prev: 7d02615fa182e528abfc55b3810adaa51d476305c4c3e6b8574fabba699761e1
   digest: 2c14debccf0a60038d22eca55a5519357b97a2b71b03d7e2c2be5fc0e7bccb56
-- id: smk_b64fa8c852a2
-  recorded_at: '2026-11-23T08:20:32Z'
+- id: smk_1ecdb9467679
+  recorded_at: '2026-11-23T08:20:52Z'
   proves:
     feature: gnome-switch-rows
   verdict: blocked
@@ -146,11 +146,11 @@ entries:
     which ends this session; after login one flip must log one journal line'
   steps: []
   evidence:
-  - path: ".scratch/smoke/2026-11-23-switch-double-toggle/before-journal.txt"
+  - path: ".scratch/smoke/sw/log.txt"
     sha256: 9699972a20bc815612b7fc9aa05f64acdba133767fe98e0dde3cf292ee3ad9e7
     bytes: 2724
     kind: log
-  - path: ".scratch/smoke/2026-11-23-switch-double-toggle/steps.txt"
+  - path: ".scratch/smoke/sw/steps.txt"
     sha256: fd2ecd25291d9404f2e64da636044d8fcf6f4a99bbc9273125c53899de9ebe08
     bytes: 460
     kind: file
@@ -185,12 +185,12 @@ entries:
     rplugin: 1.20.6
     enforce: enforce
   target:
-    commit: c3ce3677ed23f767381c979a16a7d891e6e51d46
+    commit: 23ddf4fc15b22cd432c8549bedc0b5e2cbf0f44e
     branch: main
     dirty: false
     project:
     env:
     policy_digest:
   prev: 2c14debccf0a60038d22eca55a5519357b97a2b71b03d7e2c2be5fc0e7bccb56
-  digest: d15df2b1fd00e50290049bc8e89dde64c93fd1c93c10a048ea6160b61167be6c
+  digest: 2e001a1a2ce1fcfd217525468dae31109d94194cc106ca99e96017e2601587c9
 ```
