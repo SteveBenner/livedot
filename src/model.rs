@@ -73,6 +73,34 @@ pub enum Layout {
     PerService,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PanelPosition {
+    Left,
+    Center,
+    #[default]
+    Right,
+}
+
+impl PanelPosition {
+    pub fn word(self) -> &'static str {
+        match self {
+            PanelPosition::Left => "left",
+            PanelPosition::Center => "center",
+            PanelPosition::Right => "right",
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<PanelPosition> {
+        match text {
+            "left" => Some(PanelPosition::Left),
+            "center" => Some(PanelPosition::Center),
+            "right" => Some(PanelPosition::Right),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionResult {
     pub action: String,
@@ -141,6 +169,8 @@ pub struct Snapshot {
     pub icon_size_max: u32,
     #[serde(default)]
     pub hide_healthy: bool,
+    #[serde(default)]
+    pub panel_position: PanelPosition,
     pub status: Status,
     pub color: Color,
     pub services: Vec<ServiceView>,

@@ -35,6 +35,8 @@ usage:
   livedot hide ID                  take a top-level service out of the bar; it is still checked
   livedot iconsize [PERCENT]        set the icon size as a percent of the default, 50 to 200, or print it
   livedot healthy hide|show        draw no dot for a green service in the per-service layout, or draw it
+  livedot position [left|center|right]
+                                   put the GNOME top-bar dots in that part of the bar, or print it
   livedot item ID ITEM ACTION      run one item action on an item the service reports now
   livedot stats [--low-gb N] [--state PATH]
                                    print free disk space, memory, load and swap as the JSON a
@@ -284,6 +286,20 @@ fn run(args: &[String]) -> Result<ExitCode, (u8, String)> {
             println!("{}", if hide { "healthy dots hidden" } else { "healthy dots shown" });
             Ok(ExitCode::SUCCESS)
         }
+        "position" => {
+            let proxy = bus::client().map_err(|e| (3, e))?;
+            match rest.first() {
+                Some(position) => {
+                    proxy.set_panel_position(position).map_err(|e| (1, format!("position {position} refused: {e}")))?;
+                    println!("panel position {position}");
+                }
+                None => {
+                    let snapshot = bus::fetch(&proxy).map_err(|e| (3, e))?;
+                    println!("panel position {}", snapshot.panel_position.word());
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         "item" => {
             let [id, item, action] = [0, 1, 2].map(|index| rest.get(index));
             let (Some(id), Some(item), Some(action)) = (id, item, action) else {
@@ -307,6 +323,9 @@ fn run(args: &[String]) -> Result<ExitCode, (u8, String)> {
             }
             if config.hide_healthy {
                 println!("hide_healthy: true");
+            }
+            if config.panel_position != model::PanelPosition::Right {
+                println!("panel_position: {}", config.panel_position.word());
             }
             for node in &config.services {
                 describe(node, 0);

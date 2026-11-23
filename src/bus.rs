@@ -49,6 +49,10 @@ impl DaemonInterface {
         self.shared.set_hide_healthy(hide).map_err(zbus::fdo::Error::Failed)
     }
 
+    fn set_panel_position(&self, position: &str) -> zbus::fdo::Result<()> {
+        self.shared.set_panel_position(position).map_err(zbus::fdo::Error::Failed)
+    }
+
     #[zbus(signal)]
     async fn changed(emitter: &SignalEmitter<'_>, state: &str) -> zbus::Result<()>;
 }
@@ -67,6 +71,7 @@ pub trait Livedot {
     fn set_shown(&self, id: &str, shown: bool) -> zbus::Result<()>;
     fn set_icon_size(&self, percent: u32) -> zbus::Result<()>;
     fn set_hide_healthy(&self, hide: bool) -> zbus::Result<()>;
+    fn set_panel_position(&self, position: &str) -> zbus::Result<()>;
     #[zbus(signal)]
     fn changed(&self, state: String) -> zbus::Result<()>;
 }

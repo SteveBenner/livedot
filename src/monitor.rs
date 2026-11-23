@@ -1,6 +1,6 @@
 use crate::config::{Config, ICON_SIZE_MAX, ICON_SIZE_MIN, Node};
 use crate::control::{self, Action};
-use crate::model::{ActionResult, ButtonView, ItemView, ServiceView, Snapshot, Status};
+use crate::model::{ActionResult, ButtonView, ItemView, PanelPosition, ServiceView, Snapshot, Status};
 use crate::probe::{FeedItem, Outcome, ProbeResult, Prober};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -58,6 +58,7 @@ pub struct Shared {
     config_lock: Mutex<()>,
     icon_size: AtomicU32,
     hide_healthy: AtomicBool,
+    panel_position: Mutex<PanelPosition>,
     notify: Sender<()>,
 }
 
@@ -202,6 +203,7 @@ impl Shared {
         let hidden = load_hidden(&hidden_path);
         let icon_size = AtomicU32::new(config.icon_size);
         let hide_healthy = AtomicBool::new(config.hide_healthy);
+        let panel_position = Mutex::new(config.panel_position);
         Arc::new(Shared {
             config,
             probes_disabled,
@@ -216,8 +218,21 @@ impl Shared {
             config_lock: Mutex::new(()),
             icon_size,
             hide_healthy,
+            panel_position,
             notify,
         })
+    }
+
+    pub fn set_panel_position(&self, position: &str) -> Result<(), String> {
+        let Some(position) = PanelPosition::parse(position) else {
+            return Err(format!("panel position must be left, center or right, not {position:?}"));
+        };
+        let _guard = self.config_lock.lock().unwrap();
+        edit_config_line(&self.config_path, "panel_position", position.word(), &["hide_healthy", "icon_size", "layout"])?;
+        self.panel_position.lock().unwrap().clone_from(&position);
+        eprintln!("livedot: panel position {}", position.word());
+        self.changed();
+        Ok(())
     }
 
     pub fn set_icon_size(&self, percent: u32) -> Result<(), String> {
@@ -550,6 +565,7 @@ impl Shared {
             icon_size_min: ICON_SIZE_MIN,
             icon_size_max: ICON_SIZE_MAX,
             hide_healthy: self.hide_healthy.load(Ordering::SeqCst),
+            panel_position: *self.panel_position.lock().unwrap(),
             status,
             color: status.color(),
             services,

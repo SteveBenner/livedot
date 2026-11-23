@@ -1,6 +1,6 @@
 [package]
 name = "livedot"
-version = "0.12.2"
+version = "0.13.0"
 edition = "2024"
 rust-version = "1.87"
 description = "A red, yellow or green dot for each service you care about, with start, stop and restart"

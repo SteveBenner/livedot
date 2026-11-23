@@ -25,6 +25,13 @@ const DEFAULT_ICON = 'emblem-system-symbolic';
 const MIN_LOGO_PX = 8;
 const SIZE_STEP = 5;
 const RESET_PERCENT = 100;
+const POSITIONS = [['left', 'Left'], ['center', 'Center'], ['right', 'Right']];
+const DEFAULT_POSITION = 'right';
+
+function panelPosition(snapshot) {
+    return POSITIONS.some(([position]) => position === snapshot.panel_position)
+        ? snapshot.panel_position : DEFAULT_POSITION;
+}
 
 function dotStyle(color, size) {
     const fill = COLORS[color] ?? COLORS.yellow;
@@ -353,10 +360,12 @@ class DotsTile extends QuickSettings.QuickMenuToggle {
 
 const IconSizeTile = GObject.registerClass(
 class IconSizeTile extends QuickSettings.QuickMenuToggle {
-    _init(onSize, onHide) {
+    _init(onSize, onHide, onPosition) {
         super._init({title: 'Icon size', iconName: 'format-text-size-symbolic', toggleMode: false});
         this._onSize = onSize;
         this._onHide = onHide;
+        this._onPosition = onPosition;
+        this._position = DEFAULT_POSITION;
         this._percent = null;
         this._min = 0;
         this._max = 0;
@@ -394,6 +403,16 @@ class IconSizeTile extends QuickSettings.QuickMenuToggle {
             this._switch.setToggleState(this._hide);
         });
         this.menu.addMenuItem(this._switch);
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem('Position in the bar'));
+        this._positions = new Map();
+        for (const [position, label] of POSITIONS) {
+            const item = this.menu.addAction(label, () => {
+                if (position !== this._position)
+                    this._onPosition(position);
+            });
+            item.setOrnament(PopupMenu.Ornament.NO_DOT);
+            this._positions.set(position, item);
+        }
         this.connect('clicked', () => this.menu.open());
     }
 
@@ -425,6 +444,9 @@ class IconSizeTile extends QuickSettings.QuickMenuToggle {
         this._hide = snapshot.hide_healthy === true;
         this.subtitle = this._subtitle(this._percent);
         this._switch.setToggleState(this._hide);
+        this._position = panelPosition(snapshot);
+        for (const [position, item] of this._positions)
+            item.setOrnament(position === this._position ? PopupMenu.Ornament.DOT : PopupMenu.Ornament.NO_DOT);
         this.menu.setHeader('format-text-size-symbolic', 'Icon size', this.subtitle);
         if (!this._dragging) {
             this._syncing = true;
@@ -442,6 +464,7 @@ export default class LivedotExtension extends Extension {
         this._sizeTile = null;
         this._iconScale = 1;
         this._shellPanel = true;
+        this._panelPosition = DEFAULT_POSITION;
         this._indicator = new QuickSettings.SystemIndicator();
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
         this._cancellable = new Gio.Cancellable();
@@ -544,7 +567,8 @@ export default class LivedotExtension extends Extension {
             return;
         }
         if (!this._sizeTile) {
-            this._sizeTile = new IconSizeTile(percent => this._setIconSize(percent), hide => this._setHideHealthy(hide));
+            this._sizeTile = new IconSizeTile(percent => this._setIconSize(percent), hide => this._setHideHealthy(hide),
+                position => this._setPanelPosition(position));
             this._indicator.quickSettingsItems.push(this._sizeTile);
             Main.panel.statusArea.quickSettings.menu.addItem(this._sizeTile, 1);
         }
@@ -557,6 +581,10 @@ export default class LivedotExtension extends Extension {
 
     _setHideHealthy(hide) {
         this._call('SetHideHealthy', new GLib.Variant('(b)', [hide]), `${hide ? 'hide' : 'show'} healthy dots refused`);
+    }
+
+    _setPanelPosition(position) {
+        this._call('SetPanelPosition', new GLib.Variant('(s)', [position]), `bar position ${position} refused`);
     }
 
     _call(method, args, failure) {
@@ -650,7 +678,8 @@ export default class LivedotExtension extends Extension {
             const title = key === '' ? 'livedot' : `livedot: ${key}`;
             const button = new LivedotButton(title, (id, action, text, button) => this._control(id, action, text, button),
                 (id, item, action) => this._itemAction(id, item, action));
-            Main.panel.addToStatusArea(`${this.uuid}-${key}`, button);
+            Main.panel.addToStatusArea(`${this.uuid}-${key}`, button,
+                this._panelPosition === DEFAULT_POSITION ? 0 : -1, this._panelPosition);
             button.setScale(this._iconScale);
             this._buttons.set(key, button);
         }
@@ -678,6 +707,13 @@ export default class LivedotExtension extends Extension {
             return;
         }
         this._shellPanel = snapshot.shell_panel !== false;
+        const position = panelPosition(snapshot);
+        if (position !== this._panelPosition) {
+            this._panelPosition = position;
+            for (const button of this._buttons?.values() ?? [])
+                button.destroy();
+            this._buttons?.clear();
+        }
         if (typeof snapshot.icon_size === 'number')
             this._iconScale = snapshot.icon_size / 100;
         for (const button of this._buttons?.values() ?? []) {

@@ -1,4 +1,4 @@
-use crate::model::Layout;
+use crate::model::{Layout, PanelPosition};
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::fmt;
@@ -174,6 +174,8 @@ pub struct ConfigFile {
     #[serde(default)]
     pub hide_healthy: bool,
     #[serde(default)]
+    pub panel_position: PanelPosition,
+    #[serde(default)]
     pub defaults: Defaults,
     pub services: Vec<ServiceSpec>,
 }
@@ -252,6 +254,7 @@ pub struct Config {
     pub shell_panel: bool,
     pub icon_size: u32,
     pub hide_healthy: bool,
+    pub panel_position: PanelPosition,
     pub defaults: Defaults,
     pub services: Vec<Node>,
 }
@@ -304,6 +307,7 @@ fn resolve(file: ConfigFile) -> Result<Config, ConfigError> {
         shell_panel: file.shell_panel,
         icon_size: file.icon_size,
         hide_healthy: file.hide_healthy,
+        panel_position: file.panel_position,
         defaults,
         services,
     })

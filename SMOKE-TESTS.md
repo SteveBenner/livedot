@@ -7,6 +7,7 @@
 | dot-size-hide-healthy | partial | 2026-11-23T02:24:24Z | smk_0e773d0713b2 | Claim: dot_size scales the tray dot and hide_healthy drops green dots, both persisted into config.yml and published i... |
 | icon-size-hide-healthy | partial | 2026-11-23T03:39:19Z | smk_4e51bfb7922d | Claim: icon_size replaces dot_size and leaves status dots at 0.11.0 size; hide_healthy keeps every service and drops ... |
 | gnome-switch-rows | blocked | 2026-11-23T08:20:52Z | smk_1ecdb9467679 | Switch rows in the Dots, Hide healthy and switch tiles sent a second, opposite call on GNOME 50; fix installed (exten... |
+| panel-position | partial | 2026-11-23T08:24:59Z | smk_b05d114a62d3 | Daemon 0.13.0 on a private bus: position defaults right, set center and left via CLI, GetState carries panel_position... |
 
 ## Ledger
 
@@ -193,4 +194,66 @@ entries:
     policy_digest:
   prev: 2c14debccf0a60038d22eca55a5519357b97a2b71b03d7e2c2be5fc0e7bccb56
   digest: 2e001a1a2ce1fcfd217525468dae31109d94194cc106ca99e96017e2601587c9
+- id: smk_b05d114a62d3
+  recorded_at: '2026-11-23T08:24:59Z'
+  proves:
+    feature: panel-position
+  verdict: partial
+  summary: 'Daemon 0.13.0 on a private bus: position defaults right, set center and
+    left via CLI, GetState carries panel_position, config.yml line rewritten after
+    a dated backup, middle refused with exit 1, check prints it, restart keeps it.
+    Not observed: the GNOME extension moving the dots, which loads only at next login'
+  steps: []
+  evidence:
+  - path: ".scratch/smoke/pos/out.txt"
+    sha256: 3d32c845d31e1b5fed198ecc1056c6792003ef9c518ff9f45c969dd237fb234a
+    bytes: 652
+    kind: log
+  - path: ".scratch/smoke/pos/daemon.log"
+    sha256: a57b6aca77b201a0ece6331322a5c09bddb9cf24c211d9a78ef605d06699fbbb
+    bytes: 404
+    kind: log
+  - path: ".scratch/smoke/pos/run.sh"
+    sha256: 60c8d262b54a4c361894243c388a3e3f3ca3cb53829adbb3d86c94568cb81d00
+    bytes: 1117
+    kind: file
+  runner:
+    kind: agent
+    harness: claude-code
+    harness_version: 2.1.330
+    model: claude-opus-5-5
+    effort:
+  runtime:
+    os:
+      id: ubuntu
+      name: Ubuntu
+      version: '26.04'
+    kernel: 7.0.0-43-generic
+    arch: x86_64
+    platform: x86_64-linux-gnu
+    container: false
+    wsl: false
+    tz: PST
+    locale: en_US.UTF-8
+    ruby:
+      engine: ruby
+      version: 3.3.8
+      platform: x86_64-linux-gnu
+    polispec:
+      version: 0.59.2
+      edition: standard
+      commit: 25aea6fd344f87e0598533e8293776af685b8b32
+      dirty: false
+      install: pinned
+    rplugin: 1.20.6
+    enforce: enforce
+  target:
+    commit: dfb1e9602b672349028d86010286cd78cd4f19c5
+    branch: main
+    dirty: true
+    project:
+    env:
+    policy_digest:
+  prev: 2e001a1a2ce1fcfd217525468dae31109d94194cc106ca99e96017e2601587c9
+  digest: 1e1adf1046aa24fd7c6274300ff46dd18d0f07486adc01d8e1925f7bcfa3551c
 ```

@@ -2,6 +2,13 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-11-23
+
+### Added
+- `panel_position` (`left`, `center` or `right`, default `right`) picks the part of the GNOME top bar the extension's dots sit in, so they can be centered beside the clock instead of only sitting at the right (`src/model.rs`, `src/config.rs`, `extension.js`). `right` keeps the placement of earlier versions, while `left` and `center` add the dots after what the box already holds. The tray's icons are placed by the desktop and do not move.
+- The daemon holds the setting and publishes it in `GetState`. D-Bus `SetPanelPosition` and `livedot position [left|center|right]` change it live and save it by rewriting the one line in `config.yml` under the config lock, after a dated backup (`src/monitor.rs`, `src/bus.rs`, `src/main.rs`). Any other value is refused. `livedot check` prints the setting when it is not `right`.
+- The GNOME **Icon size** tile lists the three choices under **Position in the bar** and marks the current one. A change rebuilds the panel buttons in the new box.
+
 ## [0.12.2] - 2026-11-23
 
 ### Fixed

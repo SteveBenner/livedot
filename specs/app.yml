@@ -2,7 +2,7 @@ schema_version: 1
 app:
   name: livedot
   repository: linux-widget-livedot
-  version: 0.12.2
+  version: 0.13.0
   license: MIT
   kind: daemon
   summary: >-
@@ -36,6 +36,7 @@ config:
     shell_panel: { default: true, note: "false stops the GNOME extension drawing top-bar dots, so it can run beside the tray for its Quick Settings tiles alone" }
     icon_size: { default: 100, range: [50, 200], note: "percent of the 18px service logo in the GNOME extension's top bar; the tray and every status dot ignore it; refused outside the range; changed through SetIconSize, which rewrites this line in config.yml" }
     hide_healthy: { default: false, note: "true draws a green service that has an icon as its logo without the status badge, in the tray and the GNOME top bar, in both layouts; a service without an icon keeps its dot; no service leaves the bar for being green; menus are unchanged; changed through SetHideHealthy, which rewrites this line in config.yml" }
+    panel_position: { values: [left, center, right], default: right, note: "the GNOME top-bar box the extension's panel buttons sit in; right puts each new button first in the right box as before, left and center append after what the box holds (center: after the clock); the tray's AppIndicator icons are placed by the desktop and ignore it; changed through SetPanelPosition, which rewrites this line in config.yml; a change rebuilds the panel buttons in the new box" }
     defaults:
       interval: { default: 5s, minimum: 1s }
       timeout: { default: 3s }
@@ -118,6 +119,7 @@ dbus:
     - { name: SetShown, in: "s id, b shown", note: "shows or hides one top-level service in the bar and saves the choice; refused for an unknown or child id" }
     - { name: SetIconSize, in: "u percent", note: "sets icon_size and rewrites it in config.yml after a dated backup; refused outside 50 to 200; GetState carries icon_size, icon_size_min and icon_size_max" }
     - { name: SetHideHealthy, in: "b hide", note: "sets hide_healthy and rewrites it in config.yml; GetState carries hide_healthy" }
+    - { name: SetPanelPosition, in: "s position", note: "sets panel_position to left, center or right and rewrites it in config.yml after a dated backup; refused for any other value; GetState carries panel_position" }
   signals:
     - { name: Changed, args: "s (JSON snapshot)" }
 
@@ -183,9 +185,11 @@ standards:
       Dots tile list every top-level service by name, hidden or not, and change
       only through SetShown; they hold no copy of the choice.
       icon_size scales only the top-bar logo, and hide_healthy drops only the
-      status badge from a green service's logo, never the service; both are held by the daemon,
+      status badge from a green service's logo, never the service, and
+      panel_position picks the top-bar box the GNOME extension's buttons sit
+      in; all three are held by the daemon,
       persisted into config.yml by one line edit under one lock, and published
-      in GetState. Neither changes a status, colour, rollup or the hidden set.
+      in GetState. None changes a status, colour, rollup or the hidden set.
   - id: STD-INTENDED-ACTION-NOT-FLAP
     rule: Flips inside boot_grace after a control action issued through livedot are not counted toward flapping.
   - id: STD-ICON

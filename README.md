@@ -242,6 +242,7 @@ The daemon keeps the choice in `~/.local/state/livedot/hidden` (`$XDG_STATE_HOME
 | `shell_panel` | `true` | `false`: the GNOME extension draws no top-bar dots and only its Quick Settings tiles, for running it beside the tray |
 | `icon_size` | `100` | percent of a service's app icon in the GNOME extension's top bar, 50 to 200. Status dots and the tray are not affected. The GNOME **Icon size** Quick Settings tile has a slider, and `livedot iconsize 150` sets it from a shell; either rewrites this line in `config.yml` after keeping a dated `config.yml.bak-<date>-livedot` |
 | `hide_healthy` | `false` | `true`: a green service with an icon is drawn as its icon alone, without the status badge, in the tray and the top bar. A service without an icon keeps its dot, and no service leaves the bar. The **Icon size** tile has a switch, and `livedot healthy hide` and `livedot healthy show` set it from a shell |
+| `panel_position` | `right` | which part of the GNOME top bar the extension's dots sit in: `left`, `center` (after the clock) or `right`. The tray's icons are placed by the desktop and do not move. The **Icon size** tile lists the three under **Position in the bar**, and `livedot position center` sets it from a shell; either rewrites this line in `config.yml` |
 | `defaults.interval` | `5s` | time between checks, at least `1s` |
 | `defaults.timeout` | `3s` | per check |
 | `defaults.fail_threshold` | `2` | consecutive failures before red |
