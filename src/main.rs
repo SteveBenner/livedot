@@ -33,7 +33,7 @@ usage:
   livedot dots --pick              tick the services to show in a checklist window
   livedot show ID                  give a top-level service its place in the bar again
   livedot hide ID                  take a top-level service out of the bar; it is still checked
-  livedot dotsize [PERCENT]        set the dot size as a percent of the default, 50 to 200, or print it
+  livedot iconsize [PERCENT]        set the icon size as a percent of the default, 50 to 200, or print it
   livedot healthy hide|show        draw no dot for a green service in the per-service layout, or draw it
   livedot item ID ITEM ACTION      run one item action on an item the service reports now
   livedot stats [--low-gb N] [--state PATH]
@@ -257,18 +257,18 @@ fn run(args: &[String]) -> Result<ExitCode, (u8, String)> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        "dotsize" => {
+        "iconsize" => {
             let proxy = bus::client().map_err(|e| (3, e))?;
             match rest.first() {
                 Some(text) => {
                     let percent: u32 =
-                        text.trim_end_matches('%').parse().map_err(|_| (2, format!("dotsize needs a number, got {text:?}")))?;
-                    proxy.set_dot_size(percent).map_err(|e| (1, format!("dotsize {percent} refused: {e}")))?;
-                    println!("dot size {percent}%");
+                        text.trim_end_matches('%').parse().map_err(|_| (2, format!("iconsize needs a number, got {text:?}")))?;
+                    proxy.set_icon_size(percent).map_err(|e| (1, format!("iconsize {percent} refused: {e}")))?;
+                    println!("icon size {percent}%");
                 }
                 None => {
                     let snapshot = bus::fetch(&proxy).map_err(|e| (3, e))?;
-                    println!("dot size {}%", snapshot.dot_size);
+                    println!("icon size {}%", snapshot.icon_size);
                 }
             }
             Ok(ExitCode::SUCCESS)
@@ -302,8 +302,8 @@ fn run(args: &[String]) -> Result<ExitCode, (u8, String)> {
             if !config.shell_panel {
                 println!("shell_panel: false");
             }
-            if config.dot_size != 100 {
-                println!("dot_size: {}", config.dot_size);
+            if config.icon_size != 100 {
+                println!("icon_size: {}", config.icon_size);
             }
             if config.hide_healthy {
                 println!("hide_healthy: true");

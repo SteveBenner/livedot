@@ -3,5 +3,5 @@
   "name": "livedot",
   "description": "A red, yellow or green dot for each service the livedot daemon watches, with start, stop and restart.",
   "shell-version": ["50"],
-  "version-name": "0.12.0"
+  "version-name": "0.12.1"
 }

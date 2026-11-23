@@ -22,7 +22,7 @@ const PANEL_LOGO = 18;
 const BADGE_DOT = 8;
 const NOT_RUNNING = 'the livedot daemon is not running';
 const DEFAULT_ICON = 'emblem-system-symbolic';
-const MIN_DOT_PX = 4;
+const MIN_LOGO_PX = 8;
 const SIZE_STEP = 5;
 const RESET_PERCENT = 100;
 
@@ -32,7 +32,7 @@ function dotStyle(color, size) {
 }
 
 function scaled(base, scale) {
-    return Math.max(MIN_DOT_PX, Math.round(base * scale));
+    return Math.max(MIN_LOGO_PX, Math.round(base * scale));
 }
 
 function makeDot(color, size) {
@@ -73,6 +73,8 @@ class LivedotButton extends PanelMenu.Button {
         this._oneClick = false;
         this._service = null;
         this._scale = 1;
+        this._color = 'yellow';
+        this._hideHealthy = false;
         this._oneClickGesture = new Clutter.ClickGesture();
         this._oneClickGesture.set_recognize_on_press(true);
         this._oneClickGesture.set_enabled(false);
@@ -119,6 +121,16 @@ class LivedotButton extends PanelMenu.Button {
 
     setScale(scale) {
         this._scale = scale;
+        this._logo?.set_icon_size(scaled(PANEL_LOGO, scale));
+    }
+
+    setHideHealthy(hide) {
+        this._hideHealthy = hide;
+        this._syncBadge();
+    }
+
+    _syncBadge() {
+        this._dot.visible = !(this._logo && this._color === 'green' && this._hideHealthy);
     }
 
     setLabel(text) {
@@ -128,7 +140,9 @@ class LivedotButton extends PanelMenu.Button {
     }
 
     setColor(color) {
-        this._dot.set_style(dotStyle(color, scaled(this._logo ? BADGE_DOT : PANEL_DOT, this._scale)));
+        this._color = color;
+        this._dot.set_style(dotStyle(color, this._logo ? BADGE_DOT : PANEL_DOT));
+        this._syncBadge();
     }
 
     setIcon(path) {
@@ -141,7 +155,7 @@ class LivedotButton extends PanelMenu.Button {
         if (wanted) {
             this._logo = new St.Icon({
                 gicon: new Gio.FileIcon({file: Gio.File.new_for_path(wanted)}),
-                icon_size: PANEL_LOGO,
+                icon_size: scaled(PANEL_LOGO, this._scale),
             });
             this._stack.insert_child_at_index(this._logo, 0);
         }
@@ -149,6 +163,7 @@ class LivedotButton extends PanelMenu.Button {
         this._dot.y_expand = this._logo !== null;
         this._dot.x_align = this._logo ? Clutter.ActorAlign.END : Clutter.ActorAlign.CENTER;
         this._dot.y_align = this._logo ? Clutter.ActorAlign.END : Clutter.ActorAlign.CENTER;
+        this._syncBadge();
     }
 
     showProblem(text) {
@@ -168,7 +183,7 @@ class LivedotButton extends PanelMenu.Button {
         this.menu.removeAll();
         for (const service of snapshot.services.filter(service => !service.hidden)) {
             const item = new PopupMenu.PopupSubMenuMenuItem(`${service.name} · ${service.status}`);
-            item.insert_child_at_index(makeDot(service.color, scaled(MENU_DOT, this._scale)), 1);
+            item.insert_child_at_index(makeDot(service.color, MENU_DOT), 1);
             this._fill(item.menu, service, '');
             this.menu.addMenuItem(item);
         }
@@ -232,7 +247,7 @@ class LivedotButton extends PanelMenu.Button {
         for (const child of service.children) {
             menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
             const header = this._note(menu, `${child.name} · ${child.status} · ${child.detail}`);
-            header.insert_child_at_index(makeDot(child.color, scaled(MENU_DOT, this._scale)), 1);
+            header.insert_child_at_index(makeDot(child.color, MENU_DOT), 1);
             this._fill(menu, child, ` ${child.id.split('/').slice(1).join('/')}`);
         }
     }
@@ -304,7 +319,7 @@ class DotsTile extends QuickSettings.QuickMenuToggle {
         });
     }
 
-    update(services, scale) {
+    update(services) {
         const shown = services.filter(service => !service.hidden).length;
         const subtitle = `${shown} of ${services.length} shown`;
         this._checked = shown > 0;
@@ -312,14 +327,14 @@ class DotsTile extends QuickSettings.QuickMenuToggle {
         this.checked = this._checked;
         this.menu.setHeader('view-list-symbolic', 'Dots', subtitle);
         const sorted = [...services].sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: 'base'}));
-        const key = JSON.stringify(sorted.map(service => [service.id, service.name, service.hidden === true, service.color, service.icon ?? null, scale]));
+        const key = JSON.stringify(sorted.map(service => [service.id, service.name, service.hidden === true, service.color, service.icon ?? null]));
         if (key === this._rowsKey)
             return;
         this._rowsKey = key;
         this._rows.removeAll();
         for (const service of sorted) {
             const row = new PopupMenu.PopupSwitchMenuItem(service.name, !service.hidden);
-            row.insert_child_at_index(makeDot(service.color, scaled(MENU_DOT, scale)), 1);
+            row.insert_child_at_index(makeDot(service.color, MENU_DOT), 1);
             const gicon = serviceIcon(service);
             if (gicon)
                 row.insert_child_at_index(new St.Icon({gicon, icon_size: 16}), 1);
@@ -332,10 +347,10 @@ class DotsTile extends QuickSettings.QuickMenuToggle {
     }
 });
 
-const DotSizeTile = GObject.registerClass(
-class DotSizeTile extends QuickSettings.QuickMenuToggle {
+const IconSizeTile = GObject.registerClass(
+class IconSizeTile extends QuickSettings.QuickMenuToggle {
     _init(onSize, onHide) {
-        super._init({title: 'Dot size', iconName: 'format-text-size-symbolic', toggleMode: false});
+        super._init({title: 'Icon size', iconName: 'format-text-size-symbolic', toggleMode: false});
         this._onSize = onSize;
         this._onHide = onHide;
         this._percent = null;
@@ -398,13 +413,13 @@ class DotSizeTile extends QuickSettings.QuickMenuToggle {
     }
 
     update(snapshot) {
-        this._percent = snapshot.dot_size;
-        this._min = snapshot.dot_size_min;
-        this._max = snapshot.dot_size_max;
+        this._percent = snapshot.icon_size;
+        this._min = snapshot.icon_size_min;
+        this._max = snapshot.icon_size_max;
         this._hide = snapshot.hide_healthy === true;
         this.subtitle = this._subtitle(this._percent);
         this._switch.setToggleState(this._hide);
-        this.menu.setHeader('format-text-size-symbolic', 'Dot size', this.subtitle);
+        this.menu.setHeader('format-text-size-symbolic', 'Icon size', this.subtitle);
         if (!this._dragging) {
             this._syncing = true;
             this._slider.value = (this._percent - this._min) / (this._max - this._min);
@@ -419,7 +434,7 @@ export default class LivedotExtension extends Extension {
         this._tiles = new Map();
         this._dotsTile = null;
         this._sizeTile = null;
-        this._dotScale = 1;
+        this._iconScale = 1;
         this._shellPanel = true;
         this._indicator = new QuickSettings.SystemIndicator();
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
@@ -481,7 +496,7 @@ export default class LivedotExtension extends Extension {
             this._indicator.quickSettingsItems.push(this._dotsTile);
             Main.panel.statusArea.quickSettings.menu.addItem(this._dotsTile, 1);
         }
-        this._dotsTile.update(snapshot.services, this._dotScale);
+        this._dotsTile.update(snapshot.services);
         this._syncSizeTile(snapshot);
         const services = new Map();
         for (const service of flatten(snapshot.services)) {
@@ -510,8 +525,8 @@ export default class LivedotExtension extends Extension {
     }
 
     _syncSizeTile(snapshot) {
-        const sized = typeof snapshot.dot_size === 'number' &&
-            typeof snapshot.dot_size_min === 'number' && typeof snapshot.dot_size_max === 'number';
+        const sized = typeof snapshot.icon_size === 'number' &&
+            typeof snapshot.icon_size_min === 'number' && typeof snapshot.icon_size_max === 'number';
         if (!sized) {
             if (this._sizeTile) {
                 this._sizeTile.destroy();
@@ -523,15 +538,15 @@ export default class LivedotExtension extends Extension {
             return;
         }
         if (!this._sizeTile) {
-            this._sizeTile = new DotSizeTile(percent => this._setDotSize(percent), hide => this._setHideHealthy(hide));
+            this._sizeTile = new IconSizeTile(percent => this._setIconSize(percent), hide => this._setHideHealthy(hide));
             this._indicator.quickSettingsItems.push(this._sizeTile);
             Main.panel.statusArea.quickSettings.menu.addItem(this._sizeTile, 1);
         }
         this._sizeTile.update(snapshot);
     }
 
-    _setDotSize(percent) {
-        this._call('SetDotSize', new GLib.Variant('(u)', [percent]), `dot size ${percent}% refused`);
+    _setIconSize(percent) {
+        this._call('SetIconSize', new GLib.Variant('(u)', [percent]), `icon size ${percent}% refused`);
     }
 
     _setHideHealthy(hide) {
@@ -630,7 +645,7 @@ export default class LivedotExtension extends Extension {
             const button = new LivedotButton(title, (id, action, text, button) => this._control(id, action, text, button),
                 (id, item, action) => this._itemAction(id, item, action));
             Main.panel.addToStatusArea(`${this.uuid}-${key}`, button);
-            button.setScale(this._dotScale);
+            button.setScale(this._iconScale);
             this._buttons.set(key, button);
         }
         return true;
@@ -657,20 +672,20 @@ export default class LivedotExtension extends Extension {
             return;
         }
         this._shellPanel = snapshot.shell_panel !== false;
-        if (typeof snapshot.dot_size === 'number')
-            this._dotScale = snapshot.dot_size / 100;
-        for (const button of this._buttons?.values() ?? [])
-            button.setScale(this._dotScale);
+        if (typeof snapshot.icon_size === 'number')
+            this._iconScale = snapshot.icon_size / 100;
+        for (const button of this._buttons?.values() ?? []) {
+            button.setScale(this._iconScale);
+            button.setHideHealthy(snapshot.hide_healthy === true);
+        }
         this._syncTiles(snapshot);
         const perService = snapshot.layout === 'per_service';
         if (!this._shellPanel && !perService) {
             this._sync([]);
             return;
         }
-        const hideHealthy = perService && snapshot.hide_healthy === true;
         const visible = snapshot.services.filter(service =>
-            !service.hidden && !(hideHealthy && service.color === 'green') &&
-            (this._shellPanel || service.one_click === true));
+            !service.hidden && (this._shellPanel || service.one_click === true));
         const keys = perService ? visible.map(service => service.id) : [''];
         if (!this._sync(keys))
             return;

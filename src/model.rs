@@ -133,12 +133,12 @@ pub struct Snapshot {
     pub layout: Layout,
     #[serde(default = "shell_panel_default")]
     pub shell_panel: bool,
-    #[serde(default = "dot_size_default")]
-    pub dot_size: u32,
-    #[serde(default = "dot_size_min_default")]
-    pub dot_size_min: u32,
-    #[serde(default = "dot_size_max_default")]
-    pub dot_size_max: u32,
+    #[serde(default = "icon_size_default")]
+    pub icon_size: u32,
+    #[serde(default = "icon_size_min_default")]
+    pub icon_size_min: u32,
+    #[serde(default = "icon_size_max_default")]
+    pub icon_size_max: u32,
     #[serde(default)]
     pub hide_healthy: bool,
     pub status: Status,
@@ -150,16 +150,16 @@ fn shell_panel_default() -> bool {
     true
 }
 
-fn dot_size_default() -> u32 {
+fn icon_size_default() -> u32 {
     100
 }
 
-fn dot_size_min_default() -> u32 {
-    crate::config::DOT_SIZE_MIN
+fn icon_size_min_default() -> u32 {
+    crate::config::ICON_SIZE_MIN
 }
 
-fn dot_size_max_default() -> u32 {
-    crate::config::DOT_SIZE_MAX
+fn icon_size_max_default() -> u32 {
+    crate::config::ICON_SIZE_MAX
 }
 
 fn rollup_default() -> bool {

@@ -20,9 +20,9 @@ fn coverage(x: u32, y: u32, cx: f32, cy: f32, radius: f32) -> f32 {
     inside as f32 / (SAMPLES * SAMPLES) as f32
 }
 
-fn disc(size: u32, rgb: [u8; 3], scale: f32) -> Vec<u8> {
+fn disc(size: u32, rgb: [u8; 3]) -> Vec<u8> {
     let center = size as f32 / 2.0;
-    let radius = (size as f32 * 0.40 * scale).min(size as f32 * 0.5);
+    let radius = size as f32 * 0.40;
     let mut rgba = Vec::with_capacity((size * size * 4) as usize);
     for y in 0..size {
         for x in 0..size {
@@ -53,12 +53,12 @@ fn encode(size: u32, rgba: &[u8]) -> Vec<u8> {
     out
 }
 
-pub fn argb(size: u32, rgb: [u8; 3], scale: f32) -> Vec<u8> {
-    to_argb(&disc(size, rgb, scale))
+pub fn argb(size: u32, rgb: [u8; 3]) -> Vec<u8> {
+    to_argb(&disc(size, rgb))
 }
 
-pub fn png(size: u32, rgb: [u8; 3], scale: f32) -> Vec<u8> {
-    encode(size, &disc(size, rgb, scale))
+pub fn png(size: u32, rgb: [u8; 3]) -> Vec<u8> {
+    encode(size, &disc(size, rgb))
 }
 
 pub struct Logo {
@@ -85,10 +85,10 @@ impl Logo {
         Ok(Logo { layers })
     }
 
-    fn badged(&self, size: u32, rgb: [u8; 3], scale: f32) -> Option<Vec<u8>> {
+    fn badged(&self, size: u32, rgb: [u8; 3]) -> Option<Vec<u8>> {
         let (_, layer) = self.layers.iter().find(|(s, _)| *s == size)?;
         let center = size as f32 * BADGE_CENTER;
-        let radius = (size as f32 * BADGE_RADIUS * scale).min(size as f32 * (1.0 - BADGE_CENTER));
+        let radius = size as f32 * BADGE_RADIUS;
         let mut rgba = Vec::with_capacity(layer.len());
         for y in 0..size {
             for x in 0..size {
@@ -114,11 +114,16 @@ impl Logo {
         Some(rgba)
     }
 
-    pub fn argb(&self, size: u32, rgb: [u8; 3], scale: f32) -> Vec<u8> {
-        self.badged(size, rgb, scale).map(|rgba| to_argb(&rgba)).unwrap_or_else(|| argb(size, rgb, scale))
+    pub fn argb(&self, size: u32, rgb: [u8; 3]) -> Vec<u8> {
+        self.badged(size, rgb).map(|rgba| to_argb(&rgba)).unwrap_or_else(|| argb(size, rgb))
     }
 
-    pub fn png(&self, size: u32, rgb: [u8; 3], scale: f32) -> Vec<u8> {
-        self.badged(size, rgb, scale).map(|rgba| encode(size, &rgba)).unwrap_or_else(|| png(size, rgb, scale))
+    pub fn png(&self, size: u32, rgb: [u8; 3]) -> Vec<u8> {
+        self.badged(size, rgb).map(|rgba| encode(size, &rgba)).unwrap_or_else(|| png(size, rgb))
+    }
+
+    pub fn plain_argb(&self, size: u32) -> Option<Vec<u8>> {
+        let (_, layer) = self.layers.iter().find(|(s, _)| *s == size)?;
+        Some(to_argb(layer))
     }
 }

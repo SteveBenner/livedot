@@ -1,4 +1,4 @@
-use crate::config::{Config, DOT_SIZE_MAX, DOT_SIZE_MIN, Node};
+use crate::config::{Config, ICON_SIZE_MAX, ICON_SIZE_MIN, Node};
 use crate::control::{self, Action};
 use crate::model::{ActionResult, ButtonView, ItemView, ServiceView, Snapshot, Status};
 use crate::probe::{FeedItem, Outcome, ProbeResult, Prober};
@@ -56,7 +56,7 @@ pub struct Shared {
     hidden_path: PathBuf,
     config_path: PathBuf,
     config_lock: Mutex<()>,
-    dot_size: AtomicU32,
+    icon_size: AtomicU32,
     hide_healthy: AtomicBool,
     notify: Sender<()>,
 }
@@ -79,7 +79,7 @@ fn edit_config_line(path: &std::path::Path, key: &str, value: &str, after: &[&st
     let failed = |error: std::io::Error| format!("cannot write {}: {error}", path.display());
     let text = std::fs::read_to_string(path).map_err(failed)?;
     let mut backup = path.to_path_buf().into_os_string();
-    backup.push(format!(".bak-{}-dot-size", today()));
+    backup.push(format!(".bak-{}-livedot", today()));
     let backup = PathBuf::from(backup);
     if !backup.exists() {
         std::fs::copy(path, &backup).map_err(failed)?;
@@ -200,7 +200,7 @@ impl Shared {
         let states = checked.iter().map(|id| (id.clone(), LeafState::default())).collect();
         let hidden_path = hidden_path();
         let hidden = load_hidden(&hidden_path);
-        let dot_size = AtomicU32::new(config.dot_size);
+        let icon_size = AtomicU32::new(config.icon_size);
         let hide_healthy = AtomicBool::new(config.hide_healthy);
         Arc::new(Shared {
             config,
@@ -214,27 +214,27 @@ impl Shared {
             hidden_path,
             config_path,
             config_lock: Mutex::new(()),
-            dot_size,
+            icon_size,
             hide_healthy,
             notify,
         })
     }
 
-    pub fn set_dot_size(&self, percent: u32) -> Result<(), String> {
-        if !(DOT_SIZE_MIN..=DOT_SIZE_MAX).contains(&percent) {
-            return Err(format!("dot size must be between {DOT_SIZE_MIN} and {DOT_SIZE_MAX}"));
+    pub fn set_icon_size(&self, percent: u32) -> Result<(), String> {
+        if !(ICON_SIZE_MIN..=ICON_SIZE_MAX).contains(&percent) {
+            return Err(format!("icon size must be between {ICON_SIZE_MIN} and {ICON_SIZE_MAX}"));
         }
         let _guard = self.config_lock.lock().unwrap();
-        edit_config_line(&self.config_path, "dot_size", &percent.to_string(), &["layout"])?;
-        self.dot_size.store(percent, Ordering::SeqCst);
-        eprintln!("livedot: dot size {percent}%");
+        edit_config_line(&self.config_path, "icon_size", &percent.to_string(), &["layout"])?;
+        self.icon_size.store(percent, Ordering::SeqCst);
+        eprintln!("livedot: icon size {percent}%");
         self.changed();
         Ok(())
     }
 
     pub fn set_hide_healthy(&self, hide: bool) -> Result<(), String> {
         let _guard = self.config_lock.lock().unwrap();
-        edit_config_line(&self.config_path, "hide_healthy", if hide { "true" } else { "false" }, &["dot_size", "layout"])?;
+        edit_config_line(&self.config_path, "hide_healthy", if hide { "true" } else { "false" }, &["icon_size", "layout"])?;
         self.hide_healthy.store(hide, Ordering::SeqCst);
         eprintln!("livedot: hide healthy {}", if hide { "on" } else { "off" });
         self.changed();
@@ -546,9 +546,9 @@ impl Shared {
         Snapshot {
             layout: self.config.layout,
             shell_panel: self.config.shell_panel,
-            dot_size: self.dot_size.load(Ordering::SeqCst),
-            dot_size_min: DOT_SIZE_MIN,
-            dot_size_max: DOT_SIZE_MAX,
+            icon_size: self.icon_size.load(Ordering::SeqCst),
+            icon_size_min: ICON_SIZE_MIN,
+            icon_size_max: ICON_SIZE_MAX,
             hide_healthy: self.hide_healthy.load(Ordering::SeqCst),
             status,
             color: status.color(),

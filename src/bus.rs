@@ -41,8 +41,8 @@ impl DaemonInterface {
         self.shared.set_shown(id, shown).map_err(zbus::fdo::Error::Failed)
     }
 
-    fn set_dot_size(&self, percent: u32) -> zbus::fdo::Result<()> {
-        self.shared.set_dot_size(percent).map_err(zbus::fdo::Error::Failed)
+    fn set_icon_size(&self, percent: u32) -> zbus::fdo::Result<()> {
+        self.shared.set_icon_size(percent).map_err(zbus::fdo::Error::Failed)
     }
 
     fn set_hide_healthy(&self, hide: bool) -> zbus::fdo::Result<()> {
@@ -65,7 +65,7 @@ pub trait Livedot {
     fn prompt_button(&self, id: &str, button: &str, text: &str) -> zbus::Result<()>;
     fn item_action(&self, id: &str, item: &str, action: &str) -> zbus::Result<()>;
     fn set_shown(&self, id: &str, shown: bool) -> zbus::Result<()>;
-    fn set_dot_size(&self, percent: u32) -> zbus::Result<()>;
+    fn set_icon_size(&self, percent: u32) -> zbus::Result<()>;
     fn set_hide_healthy(&self, hide: bool) -> zbus::Result<()>;
     #[zbus(signal)]
     fn changed(&self, state: String) -> zbus::Result<()>;

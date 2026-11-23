@@ -39,10 +39,6 @@ fn load_logos(logos: &mut Logos, snapshot: &Snapshot) {
     }
 }
 
-fn scale_of(snapshot: Option<&Snapshot>) -> f32 {
-    snapshot.map(|snapshot| snapshot.dot_size).unwrap_or(100) as f32 / 100.0
-}
-
 pub struct LiveTray {
     root: Option<String>,
     snapshot: Option<Snapshot>,
@@ -55,10 +51,6 @@ impl LiveTray {
     fn service(&self) -> Option<&ServiceView> {
         let root = self.root.as_ref()?;
         self.snapshot.as_ref()?.services.iter().find(|s| &s.id == root)
-    }
-
-    fn scale(&self) -> f32 {
-        scale_of(self.snapshot.as_ref())
     }
 
     fn color(&self) -> Color {
@@ -246,10 +238,10 @@ fn capitalize(word: &str) -> String {
     }
 }
 
-fn service_items(view: &ServiceView, logos: &Logos, scale: f32) -> Vec<MenuItem<LiveTray>> {
+fn service_items(view: &ServiceView, logos: &Logos) -> Vec<MenuItem<LiveTray>> {
     let header = StandardItem {
         label: format!("{} · {} · {}", view.name, view.status.word(), view.detail),
-        icon_data: status_icon(view, logos, scale),
+        icon_data: status_icon(view, logos),
         ..Default::default()
     };
     let mut items: Vec<MenuItem<LiveTray>> = vec![header.into()];
@@ -322,7 +314,7 @@ fn service_items(view: &ServiceView, logos: &Logos, scale: f32) -> Vec<MenuItem<
     }
     if !view.children.is_empty() {
         items.push(MenuItem::Separator);
-        items.extend(view.children.iter().map(|child| service_menu(child, logos, scale)));
+        items.extend(view.children.iter().map(|child| service_menu(child, logos)));
     }
     items
 }
@@ -364,10 +356,10 @@ fn item_menu(view: &ServiceView, item: &ItemView) -> MenuItem<LiveTray> {
     SubMenu { label: item.label.clone(), submenu: entries, ..Default::default() }.into()
 }
 
-fn status_icon(view: &ServiceView, logos: &Logos, scale: f32) -> Vec<u8> {
+fn status_icon(view: &ServiceView, logos: &Logos) -> Vec<u8> {
     match logo_for(logos, view) {
-        Some(logo) => logo.png(MENU_LOGO, view.color.rgb(), scale),
-        None => dot::png(MENU_DOT, view.color.rgb(), scale),
+        Some(logo) => logo.png(MENU_LOGO, view.color.rgb()),
+        None => dot::png(MENU_DOT, view.color.rgb()),
     }
 }
 
@@ -380,11 +372,11 @@ fn action_icon(action: &str) -> &'static str {
     }
 }
 
-fn service_menu(view: &ServiceView, logos: &Logos, scale: f32) -> MenuItem<LiveTray> {
+fn service_menu(view: &ServiceView, logos: &Logos) -> MenuItem<LiveTray> {
     SubMenu {
         label: format!("{} · {}", view.name, view.status.word()),
-        icon_data: status_icon(view, logos, scale),
-        submenu: service_items(view, logos, scale),
+        icon_data: status_icon(view, logos),
+        submenu: service_items(view, logos),
         ..Default::default()
     }
     .into()
@@ -436,14 +428,16 @@ impl ksni::Tray for LiveTray {
 
     fn icon_pixmap(&self) -> Vec<ksni::Icon> {
         let rgb = self.color().rgb();
-        let scale = self.scale();
         let logo = self.service().and_then(|service| logo_for(&self.logos, service));
+        let unbadged = self.snapshot.as_ref().is_some_and(|snapshot| snapshot.hide_healthy)
+            && self.service().is_some_and(|service| service.color == Color::Green);
         ICON_SIZES
             .iter()
             .map(|size| {
                 let data = match logo {
-                    Some(logo) => logo.argb(*size, rgb, scale),
-                    None => dot::argb(*size, rgb, scale),
+                    Some(logo) if unbadged => logo.plain_argb(*size).unwrap_or_else(|| logo.argb(*size, rgb)),
+                    Some(logo) => logo.argb(*size, rgb),
+                    None => dot::argb(*size, rgb),
                 };
                 ksni::Icon { width: *size as i32, height: *size as i32, data }
             })
@@ -467,14 +461,14 @@ impl ksni::Tray for LiveTray {
         } else {
             match (&self.root, &self.snapshot) {
                 (Some(root), _) => match self.service() {
-                    Some(service) => service_items(service, &self.logos, self.scale()),
+                    Some(service) => service_items(service, &self.logos),
                     None => vec![note(format!("{root} is not in the daemon config"))],
                 },
                 (None, Some(snapshot)) => snapshot
                     .services
                     .iter()
                     .filter(|service| !service.hidden)
-                    .map(|service| service_menu(service, &self.logos, scale_of(Some(snapshot))))
+                    .map(|service| service_menu(service, &self.logos))
                     .collect(),
                 (None, None) => vec![note("waiting for the livedot daemon".into())],
             }
@@ -487,7 +481,7 @@ impl ksni::Tray for LiveTray {
 fn keys(snapshot: &Snapshot) -> Vec<Option<String>> {
     match snapshot.layout {
         Layout::Aggregate => vec![None],
-        Layout::PerService => snapshot.services.iter().filter(|s| !s.hidden && !s.one_click && !(snapshot.hide_healthy && s.color == Color::Green)).map(|s| Some(s.id.clone())).collect(),
+        Layout::PerService => snapshot.services.iter().filter(|s| !s.hidden && !s.one_click).map(|s| Some(s.id.clone())).collect(),
     }
 }
 

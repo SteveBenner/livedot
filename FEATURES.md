@@ -6,7 +6,7 @@ livedot shows a red, yellow or green dot for each configured service and offers 
 
 | | |
 |---|---|
-| **Registry version** | 0.12.0 |
+| **Registry version** | 0.12.1 |
 | **Last audited** | 2026-10-29 |
 | **Coverage** | Complete: every surface in `README.md` and `specs/app.yml`. |
 | **Running instance** | The author's GNOME Wayland desktop, with `livedot.service` and `livedot-tray.service` in per-service layout watching a few dozen services: HTTP checks, user units, command checks with item actions and switch items, a prompt service with a button, and a `livedot stats` check. The GNOME extension runs with `shell_panel: false` for its Quick Settings tile. 🟢 rows are in use there; the rest were exercised from `target/debug/livedot` against throwaway services. |
@@ -40,7 +40,7 @@ Build: ✅ Shipped · 🟡 Partial · ⚪ Planned. Deploy: 🟢 Live · 🔵 Bui
 | Labels: a command check's `label` beside the service's dot, as the tray's `XAyatanaLabel` and in the extension's panel button | ✅ | 🟢 | one service; the live tray item's `XAyatanaLabel` read `23 GB` over D-Bus and a private-bus run saw it change with `XAyatanaNewLabel`; nobody has yet seen GNOME draw it in the top bar; the extension side has never run in a Shell |
 | `one_click: true`: one left click on the service's dot in the GNOME extension runs its first item's first action | ✅ | 🔵 | proven only on a nested gnome-shell with synthesized presses on a private bus; no physical click, nothing installed, not in the live Shell |
 | `rollup: false`: a dot kept out of its parent's worst-of and the aggregate | ✅ | 🟢 | one child (a model slot that reads red when loaded, yellow loading, green free); on a private bus its wrapper read `up · all up` beside the red child |
-| `dot_size` and `hide_healthy`: dot scaling and hiding green dots, `SetDotSize`, `SetHideHealthy`, `livedot dotsize`, `livedot healthy` | ✅ | 🔵 | range refusal, persistence into a scratch `config.yml` with every other line intact, and the tray's pixmap at 50, 100 and 150 percent were run on a private bus; the GNOME **Dot size** tile and the scaled top-bar dots were syntax-checked only and have not been loaded in a Shell or seen by a person; not installed |
+| `icon_size` and `hide_healthy`: top-bar app icon size and badge-free healthy icons, `SetIconSize`, `SetHideHealthy`, `livedot iconsize`, `livedot healthy` | ✅ | 🔵 | range refusal, refusal of the old `dot_size` key, persistence into a scratch `config.yml`, and the tray pixmaps (green logo unbadged, green plain dot unchanged, red logo badged, every item kept) were run on a private bus; the GNOME **Icon size** tile, the scaled top-bar logo and the hidden badge were syntax-checked only and have not been seen in a Shell |
 | Dots in the bar: hidden set in the daemon, `SetShown`, `livedot dots`, `show`, `hide` | ✅ | 🟢 | run on a private bus: hide, show, persistence across a restart, child refusal, an unknown line kept |
 | Tray **Dots…** checklist (`livedot dots --pick`) | ✅ | 🟢 | run with a stand-in zenity on a private bus; the real window has not been opened by a person; unticking a shown service and a missing zenity were not exercised |
 | GNOME **Dots** Quick Settings tile | ✅ | 🔵 | syntax-checked only; a Wayland Shell loads extension code at login, so the tile appears after the next login and has not been seen by a person |

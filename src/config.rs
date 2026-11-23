@@ -155,12 +155,12 @@ fn enabled_default() -> bool {
     true
 }
 
-pub fn dot_size_default() -> u32 {
+pub fn icon_size_default() -> u32 {
     100
 }
 
-pub const DOT_SIZE_MIN: u32 = 50;
-pub const DOT_SIZE_MAX: u32 = 200;
+pub const ICON_SIZE_MIN: u32 = 50;
+pub const ICON_SIZE_MAX: u32 = 200;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -169,8 +169,8 @@ pub struct ConfigFile {
     pub layout: Layout,
     #[serde(default = "enabled_default")]
     pub shell_panel: bool,
-    #[serde(default = "dot_size_default")]
-    pub dot_size: u32,
+    #[serde(default = "icon_size_default")]
+    pub icon_size: u32,
     #[serde(default)]
     pub hide_healthy: bool,
     #[serde(default)]
@@ -250,7 +250,7 @@ pub struct Node {
 pub struct Config {
     pub layout: Layout,
     pub shell_panel: bool,
-    pub dot_size: u32,
+    pub icon_size: u32,
     pub hide_healthy: bool,
     pub defaults: Defaults,
     pub services: Vec<Node>,
@@ -292,8 +292,8 @@ fn resolve(file: ConfigFile) -> Result<Config, ConfigError> {
     if defaults.fail_threshold == 0 || defaults.flap_threshold == 0 {
         return Err(ConfigError("defaults.fail_threshold and defaults.flap_threshold must be at least 1".into()));
     }
-    if !(DOT_SIZE_MIN..=DOT_SIZE_MAX).contains(&file.dot_size) {
-        return Err(ConfigError(format!("dot_size must be between {DOT_SIZE_MIN} and {DOT_SIZE_MAX}")));
+    if !(ICON_SIZE_MIN..=ICON_SIZE_MAX).contains(&file.icon_size) {
+        return Err(ConfigError(format!("icon_size must be between {ICON_SIZE_MIN} and {ICON_SIZE_MAX}")));
     }
     if file.services.is_empty() {
         return Err(ConfigError("services is empty: declare at least one service".into()));
@@ -302,7 +302,7 @@ fn resolve(file: ConfigFile) -> Result<Config, ConfigError> {
     Ok(Config {
         layout: file.layout,
         shell_panel: file.shell_panel,
-        dot_size: file.dot_size,
+        icon_size: file.icon_size,
         hide_healthy: file.hide_healthy,
         defaults,
         services,

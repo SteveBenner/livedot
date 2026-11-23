@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2026-11-22
+
+### Changed
+- `dot_size` is renamed `icon_size`, with `SetIconSize`, `livedot iconsize [PERCENT]`, and an **Icon size** tile. It now scales a service's app icon in the GNOME extension's top bar (18px at 100 percent) instead of the status dot, which was the intent of the setting. The tray ignores it. A config that still has `dot_size` is refused at load, naming the field, so rename the line to `icon_size`.
+- `hide_healthy` no longer removes green services from the bar. Every enabled service stays visible. A green service with an icon is drawn as its icon without the status badge, and a service without an icon keeps its dot. This applies in the tray and the top bar, in both layouts.
+
+### Fixed
+- Every status dot, badge and menu dot is back to its 0.11.0 size. In 0.12.0 the size setting scaled them (`src/dot.rs`, `extension.js`).
+
 ## [0.12.0] - 2026-11-22
 
 ### Added

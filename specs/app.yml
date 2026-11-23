@@ -2,7 +2,7 @@ schema_version: 1
 app:
   name: livedot
   repository: linux-widget-livedot
-  version: 0.12.0
+  version: 0.12.1
   license: MIT
   kind: daemon
   summary: >-
@@ -34,8 +34,8 @@ config:
   top_level:
     layout: { values: [aggregate, per_service], default: aggregate }
     shell_panel: { default: true, note: "false stops the GNOME extension drawing top-bar dots, so it can run beside the tray for its Quick Settings tiles alone" }
-    dot_size: { default: 100, range: [50, 200], note: "percent of the base dot size, scaling the tray dot and the GNOME top-bar and menu dots; refused outside the range; changed through SetDotSize, which rewrites this line in config.yml" }
-    hide_healthy: { default: false, note: "true draws no dot for a top-level service whose colour is green, in the tray and the GNOME top bar, in per_service layout only; changed through SetHideHealthy, which rewrites this line in config.yml" }
+    icon_size: { default: 100, range: [50, 200], note: "percent of the 18px service logo in the GNOME extension's top bar; the tray and every status dot ignore it; refused outside the range; changed through SetIconSize, which rewrites this line in config.yml" }
+    hide_healthy: { default: false, note: "true draws a green service that has an icon as its logo without the status badge, in the tray and the GNOME top bar, in both layouts; a service without an icon keeps its dot; no service leaves the bar for being green; menus are unchanged; changed through SetHideHealthy, which rewrites this line in config.yml" }
     defaults:
       interval: { default: 5s, minimum: 1s }
       timeout: { default: 3s }
@@ -116,7 +116,7 @@ dbus:
     - { name: PromptButton, in: "s id, s button, s text", note: "hands text to one button of a prompt service; returns once accepted" }
     - { name: ItemAction, in: "s id, s item, s action", note: "runs one item action on an item the service reports now; returns once accepted" }
     - { name: SetShown, in: "s id, b shown", note: "shows or hides one top-level service in the bar and saves the choice; refused for an unknown or child id" }
-    - { name: SetDotSize, in: "u percent", note: "sets dot_size and rewrites it in config.yml after a dated backup; refused outside 50 to 200; GetState carries dot_size, dot_size_min and dot_size_max" }
+    - { name: SetIconSize, in: "u percent", note: "sets icon_size and rewrites it in config.yml after a dated backup; refused outside 50 to 200; GetState carries icon_size, icon_size_min and icon_size_max" }
     - { name: SetHideHealthy, in: "b hide", note: "sets hide_healthy and rewrites it in config.yml; GetState carries hide_healthy" }
   signals:
     - { name: Changed, args: "s (JSON snapshot)" }
@@ -182,8 +182,8 @@ standards:
       menu, and has no tray item or panel button. The tray checklist and the
       Dots tile list every top-level service by name, hidden or not, and change
       only through SetShown; they hold no copy of the choice.
-      dot_size scales the drawn dot and hide_healthy drops the dot of a green
-      top-level service in per_service layout; both are held by the daemon,
+      icon_size scales only the top-bar logo, and hide_healthy drops only the
+      status badge from a green service's logo, never the service; both are held by the daemon,
       persisted into config.yml by one line edit under one lock, and published
       in GetState. Neither changes a status, colour, rollup or the hidden set.
   - id: STD-INTENDED-ACTION-NOT-FLAP
