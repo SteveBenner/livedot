@@ -287,7 +287,9 @@ class SwitchTile extends QuickSettings.QuickMenuToggle {
         for (const item of items) {
             const row = new PopupMenu.PopupSwitchMenuItem(item.label, item.checked);
             row.setSensitive(!service.busy && item.actions.length > 0);
-            row.connect('toggled', () => {
+            row.connect('toggled', (_row, state) => {
+                if (state === item.checked)
+                    return;
                 if (item.actions.length > 0)
                     this._onItem(service.id, item.id, item.actions[0].name);
                 row.setToggleState(item.checked);
@@ -339,6 +341,8 @@ class DotsTile extends QuickSettings.QuickMenuToggle {
             if (gicon)
                 row.insert_child_at_index(new St.Icon({gicon, icon_size: 16}), 1);
             row.connect('toggled', (_item, state) => {
+                if (state === !service.hidden)
+                    return;
                 this._onShown(service.id, state);
                 row.setToggleState(!service.hidden);
             });
@@ -384,6 +388,8 @@ class IconSizeTile extends QuickSettings.QuickMenuToggle {
         this.menu.addAction(`Reset to ${RESET_PERCENT}%`, () => this._onSize(RESET_PERCENT));
         this._switch = new PopupMenu.PopupSwitchMenuItem('Hide healthy dots', false);
         this._switch.connect('toggled', (_item, state) => {
+            if (state === this._hide)
+                return;
             this._onHide(state);
             this._switch.setToggleState(this._hide);
         });

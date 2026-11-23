@@ -2,7 +2,7 @@ schema_version: 1
 app:
   name: livedot
   repository: linux-widget-livedot
-  version: 0.12.1
+  version: 0.12.2
   license: MIT
   kind: daemon
   summary: >-
@@ -252,7 +252,8 @@ standards:
       check output decides what a flip does (a switch that is on lists its off
       action first). The front ends hold no switch state of their own; the
       next probe, woken by the action, redraws them. Clicking the tile body
-      opens its menu and flips nothing.
+      opens its menu and flips nothing. A switch row set back to the state the
+      daemon reports calls nothing, in every tile.
   - id: STD-LABEL
     rule: >-
       A command check's JSON label (trimmed, cut to 32 characters, dropped when

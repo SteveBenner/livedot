@@ -2,6 +2,11 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.2] - 2026-11-23
+
+### Fixed
+- The GNOME extension's switch rows work on GNOME Shell 50, where a switch row emits `toggled` whenever its state changes, including when code sets it. Each handler set the row back to the reported state, which emitted `toggled` again and sent the opposite call. A row in the **Dots** tile hid its service and showed it again in the same second, **Hide healthy dots** set the value back, and a switch tile ran its item's action twice. A row now ignores a `toggled` that matches the state the daemon reports (`extension.js`, STD-SWITCH).
+
 ## [0.12.1] - 2026-11-22
 
 ### Changed
