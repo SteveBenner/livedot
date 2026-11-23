@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- |
 | dot-size-hide-healthy | partial | 2026-11-23T02:24:24Z | smk_0e773d0713b2 | Claim: dot_size scales the tray dot and hide_healthy drops green dots, both persisted into config.yml and published i... |
 | icon-size-hide-healthy | partial | 2026-11-23T03:39:19Z | smk_4e51bfb7922d | Claim: icon_size replaces dot_size and leaves status dots at 0.11.0 size; hide_healthy keeps every service and drops ... |
-| gnome-switch-rows | blocked | 2026-11-23T08:19:23Z | smk_7883428f3b3f | Switch rows in the Dots, Hide healthy and switch tiles sent a second, opposite call on GNOME 50; fix installed (exten... |
+| gnome-switch-rows | blocked | 2026-11-23T08:20:32Z | smk_b64fa8c852a2 | Switch rows in the Dots, Hide healthy and switch tiles sent a second, opposite call on GNOME 50; fix installed (exten... |
 
 ## Ledger
 
@@ -135,8 +135,8 @@ entries:
     policy_digest:
   prev: 7d02615fa182e528abfc55b3810adaa51d476305c4c3e6b8574fabba699761e1
   digest: 2c14debccf0a60038d22eca55a5519357b97a2b71b03d7e2c2be5fc0e7bccb56
-- id: smk_7883428f3b3f
-  recorded_at: '2026-11-23T08:19:23Z'
+- id: smk_b64fa8c852a2
+  recorded_at: '2026-11-23T08:20:32Z'
   proves:
     feature: gnome-switch-rows
   verdict: blocked
@@ -185,12 +185,12 @@ entries:
     rplugin: 1.20.6
     enforce: enforce
   target:
-    commit: ca9656d08fb40f025a85d96b35581b3ab64657f7
+    commit: c3ce3677ed23f767381c979a16a7d891e6e51d46
     branch: main
-    dirty: true
+    dirty: false
     project:
     env:
     policy_digest:
   prev: 2c14debccf0a60038d22eca55a5519357b97a2b71b03d7e2c2be5fc0e7bccb56
-  digest: ec14d5ac204069716fd1ed7cbf647e2a3671894ba99dbadc2b6546356c2bd196
+  digest: d15df2b1fd00e50290049bc8e89dde64c93fd1c93c10a048ea6160b61167be6c
 ```
