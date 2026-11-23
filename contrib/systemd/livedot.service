@@ -1,0 +1,10 @@
+[Unit]
+Description=livedot health monitor daemon
+
+[Service]
+ExecStart=%h/.local/bin/livedot daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

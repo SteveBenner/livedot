@@ -1,0 +1,29 @@
+layout: aggregate
+defaults:
+  interval: 5s
+  timeout: 3s
+  fail_threshold: 2
+  flap_window: 60s
+  flap_threshold: 3
+  boot_grace: 30s
+  max_backoff: 30s
+  control_timeout: 60s
+services:
+  - name: blog
+    check:
+      http: http://127.0.0.1:8080/health
+      expect_status: [200, 204]
+    control:
+      unit: blog.service
+      scope: system
+  - name: worker
+    check:
+      process: "bin/worker --queue default"
+    control:
+      start: ["bin/worker", "--queue", "default", "--daemonize"]
+      stop: pkill -f "bin/worker --queue default"
+      cwd: /srv/app
+      timeout: 20s
+  - name: database
+    unit: postgresql.service
+    scope: system

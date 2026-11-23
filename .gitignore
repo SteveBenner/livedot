@@ -1,0 +1,10 @@
+target/
+_llm-artifacts/
+TMP_AGENT_FILE_LOCKS.yml
+.rproject/
+.specstory/
+.tellem/
+.scratch/
+DECISIONS.md
+TOKENS.jsonl
+TMP_AGENT_*

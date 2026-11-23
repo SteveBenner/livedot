@@ -1,0 +1,13 @@
+[Unit]
+Description=livedot tray indicator
+Wants=livedot.service
+After=livedot.service graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/livedot tray
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

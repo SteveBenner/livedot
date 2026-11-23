@@ -1,0 +1,13 @@
+layout: aggregate
+services:
+  - name: shop
+    children:
+      - name: web
+        check:
+          http: http://127.0.0.1:8080/health
+        control:
+          unit: shop-web.service
+      - name: worker
+        unit: shop-worker.service
+      - name: scheduler
+        unit: shop-scheduler.service

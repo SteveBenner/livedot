@@ -1,0 +1,277 @@
+schema_version: 1
+app:
+  name: livedot
+  repository: linux-widget-livedot
+  version: 0.12.0
+  license: MIT
+  kind: daemon
+  summary: >-
+    A red, yellow or green dot for each service you care about, driven by a YAML
+    config, with start, stop and restart from the same menu.
+  language: rust
+  binary: livedot
+  vendored:
+    - { crate: ksni, version: 0.3.6, path: vendor/ksni, license: Unlicense, change: "Tray::label, published as the XAyatanaLabel and XAyatanaLabelGuide properties with the XAyatanaNewLabel signal; nothing else differs from the crates.io release" }
+
+processes:
+  - id: daemon
+    command: livedot daemon
+    role: Loads the config, probes every service, runs control actions, publishes state on the session D-Bus.
+  - id: tray
+    command: livedot tray
+    role: StatusNotifierItem front end. A D-Bus client of the daemon.
+  - id: gnome-extension
+    path: gnome-extension/livedot@livedot.io
+    role: GNOME Shell front end. Top-bar dots unless shell_panel is false, one Quick Settings tile per service with switch items, and the Dots tile that shows or hides each top-level service in the bar. A D-Bus client of the daemon.
+
+config:
+  path_ladder:
+    - "--config PATH"
+    - "$LIVEDOT_CONFIG"
+    - "$XDG_CONFIG_HOME/livedot/config.yml"
+    - "~/.config/livedot/config.yml"
+  unknown_keys: rejected
+  top_level:
+    layout: { values: [aggregate, per_service], default: aggregate }
+    shell_panel: { default: true, note: "false stops the GNOME extension drawing top-bar dots, so it can run beside the tray for its Quick Settings tiles alone" }
+    dot_size: { default: 100, range: [50, 200], note: "percent of the base dot size, scaling the tray dot and the GNOME top-bar and menu dots; refused outside the range; changed through SetDotSize, which rewrites this line in config.yml" }
+    hide_healthy: { default: false, note: "true draws no dot for a top-level service whose colour is green, in the tray and the GNOME top bar, in per_service layout only; changed through SetHideHealthy, which rewrites this line in config.yml" }
+    defaults:
+      interval: { default: 5s, minimum: 1s }
+      timeout: { default: 3s }
+      fail_threshold: { default: 2 }
+      flap_window: { default: 60s }
+      flap_threshold: { default: 3 }
+      boot_grace: { default: 30s }
+      max_backoff: { default: 30s }
+      control_timeout: { default: 60s }
+    services: list of service
+  service:
+    name: required, unique among siblings, no slash
+    enabled: { default: true }
+    unit: shorthand; the unit is both the check and the control
+    scope: { values: [user, system], default: user }
+    check: one of http, unit, process, command
+    item_actions: "list of {name, label, icon, command, cwd, timeout} offered on every item a command check reports; {item} in the command is replaced by the item id, which is also in LIVEDOT_ITEM; timeout defaults to defaults.control_timeout; only on a service with a command check"
+    control: a unit, or start and stop commands with an optional restart command
+    icon: optional path to an SVG, absolute or starting with ~/; the front end draws it with the status dot as a corner badge
+    children: list of service; a service with children is a wrapper
+    rollup: { default: true, note: "false keeps the service's own dot and colour but leaves it out of its parent's worst-of and its parent's detail; on a top-level service, out of the aggregate dot" }
+    one_click: { default: false, note: "top-level only, needs item_actions, refused with a url; in per_service layout the GNOME extension draws the dot even with shell_panel false and one left click runs the first item's first action (right click opens the menu, busy or no action does nothing); the tray publishes no indicator for it; no effect in aggregate layout; without the extension the dot is not drawn" }
+    url: optional http or https address; the front end offers it as Open in browser
+    prompt:
+      command: required; a string run with sh -c, or a list of arguments
+      cwd: optional
+      timeout: { default: 10m }
+      buttons: "list of {name, label, command, cwd, timeout}; each is a further text box with its own command; icon is a freedesktop icon name for its menu entry; name is letters, digits, - or _"
+      note: a prompt service takes no check, unit, control or children
+  command_check:
+    command: a string run with sh -c, or a list of arguments; LIVEDOT_SERVICE is set
+    exit: "0 passes and non-zero fails, unless standard output is one JSON object that says otherwise"
+    output: "optional JSON {status, detail, label, items}; status is up, down, unsure or booting; detail is one line; label is the short text shown beside the service's own top-bar dot; items is a list of {id, label, detail, actions, checked}; checked true or false makes the item a switch"
+    item_id: "1 to 128 of letters, digits, . _ : -; an item with any other id is dropped"
+    item_actions_field: "the item_actions names that apply to the item; absent means all of them; unknown names are dropped"
+    limits: "at most 64 KiB of standard output read, 20 items kept, item labels and details cut to 120 characters, the service label cut to 32"
+  env:
+    LIVEDOT_CONFIG: config path
+    LIVEDOT_DISABLE_PROBES: "1 stops every probe; every dot reads unsure"
+
+stats:
+  command: "livedot stats [--low-gb N] [--state PATH]"
+  role: prints this machine's free disk space, memory, load and swap as the JSON a command check reads; a system dot is a command check that runs it
+  select: "livedot stats show ITEM [--state PATH] records which item the label shows; an item action runs it"
+  state: "$XDG_STATE_HOME/livedot/stats-show when XDG_STATE_HOME is absolute, else ~/.local/state/livedot/stats-show; one item id"
+  units: "decimal GB (bytes / 1e9), one decimal below 10 GB, whole GB from 10"
+  items:
+    - { id: "disk:root", label: "Free on / · 19 GB", text: "19 GB", default: true }
+    - { id: "disk:<mount name>", label: "Free on SVEN-B1 · 2312 GB", text: "SVEN-B1 2312 GB", note: "every other mount of a /dev block device except loop devices and /boot, at most 16; a disk that cannot be read is left out" }
+    - { id: memory, label: "RAM available · 65 GB", text: "RAM 65 GB" }
+    - { id: load, label: "Load · 20.5 on 32 cores", text: "load 20.5" }
+    - { id: swap, label: "Swap used · 7.9 GB of 8.6 GB", text: "swap 7.9 GB" }
+  status: "down when / has less than --low-gb (default 10) GB free, with detail \"low disk: …\"; unsure when / cannot be read or the state file exists but cannot be read; up otherwise"
+  reads: [/proc/self/mounts, statvfs, /proc/meminfo, /proc/loadavg]
+  writes: "the state file only, and only from stats show"
+
+dots:
+  role: which top-level services have a place in the bar; a hidden service is still probed and still in every list of dots
+  state: "$XDG_STATE_HOME/livedot/hidden when XDG_STATE_HOME is absolute, else ~/.local/state/livedot/hidden; one top-level service id per line; lines naming no configured service are kept"
+  commands:
+    - "livedot dots [--json] lists every top-level service by name, one per line, with its dot and whether it is shown"
+    - "livedot dots --pick opens the checklist window the tray's Dots… entry opens"
+    - "livedot show ID and livedot hide ID set one top-level service"
+  frontends:
+    tray: "a Dots… entry at the end of every livedot tray menu opens a zenity checklist of every top-level service by name; OK applies what changed"
+    gnome-extension: "a Dots Quick Settings tile, subtitled with how many are shown, whose menu holds one switch row per top-level service with its status dot"
+  order: by name, case-insensitive
+
+dbus:
+  bus: session
+  name: io.livedot.Daemon
+  path: /io/livedot/Daemon
+  interface: io.livedot.Daemon1
+  methods:
+    - { name: GetState, out: "s (JSON snapshot)" }
+    - { name: Control, in: "s id, s action", note: "action is start, stop or restart; returns once accepted" }
+    - { name: Prompt, in: "s id, s text", note: "hands text to a prompt service; returns once accepted" }
+    - { name: PromptButton, in: "s id, s button, s text", note: "hands text to one button of a prompt service; returns once accepted" }
+    - { name: ItemAction, in: "s id, s item, s action", note: "runs one item action on an item the service reports now; returns once accepted" }
+    - { name: SetShown, in: "s id, b shown", note: "shows or hides one top-level service in the bar and saves the choice; refused for an unknown or child id" }
+    - { name: SetDotSize, in: "u percent", note: "sets dot_size and rewrites it in config.yml after a dated backup; refused outside 50 to 200; GetState carries dot_size, dot_size_min and dot_size_max" }
+    - { name: SetHideHealthy, in: "b hide", note: "sets hide_healthy and rewrites it in config.yml; GetState carries hide_healthy" }
+  signals:
+    - { name: Changed, args: "s (JSON snapshot)" }
+
+standards:
+  - id: STD-STATUS
+    rule: >-
+      A leaf is up (green) when its last probe passed; down (red) after
+      fail_threshold consecutive failed probes; and yellow when booting (inside
+      boot_grace after a start or restart, or its unit is activating), flapping
+      (flap_threshold pass/fail flips inside flap_window), or unsure (not probed
+      yet, probing disabled, the probe could not run, or a first failure not yet
+      confirmed).
+  - id: STD-WRAPPER
+    rule: >-
+      A service with children shows the worst status among them and its own
+      check: red if any is down, otherwise yellow if any is yellow, otherwise
+      green. A child with rollup false is left out (STD-ROLLUP).
+  - id: STD-CONTROL-ORDER
+    rule: >-
+      A wrapper with no control of its own starts its children in config order,
+      stops them in reverse order, and restarts by stopping all then starting all.
+  - id: STD-CONTROL-SERIAL
+    rule: One control action at a time per top-level service; a second is refused as busy.
+  - id: STD-CONTROL-TIMEOUT
+    rule: Every control command is killed after its timeout.
+  - id: STD-PROBE-BOUNDED
+    rule: >-
+      One probe in flight per leaf, never faster than once a second, each with a
+      timeout and a jittered delay. A 429 or 503 answer doubles the delay on each
+      consecutive occurrence up to max_backoff, and its Retry-After is honored up
+      to five minutes. Every other failure keeps the configured interval, so a
+      recovery is seen within one interval. Redirects are not followed.
+  - id: STD-PROBE-KILL-SWITCH
+    rule: LIVEDOT_DISABLE_PROBES=1 or enabled false stops probing without stopping the daemon.
+  - id: STD-BUS-LOST
+    rule: >-
+      The daemon and the tray exit non-zero when their own session bus
+      connection is lost: the daemon when emitting Changed fails with an I/O
+      error, the tray when its Changed subscription ends. The shipped user
+      units restart them on failure after 5 seconds. A tray whose daemon
+      restarts keeps running and picks the new daemon up on its next poll.
+  - id: STD-FRONTENDS-THIN
+    rule: >-
+      A front end holds no config and probes nothing; it renders the daemon
+      snapshot, forwards control calls, and for a prompt service collects one
+      line of text and forwards it.
+  - id: STD-LAYOUT
+    rule: aggregate shows one worst-of dot; per_service shows one dot per top-level service. A hidden service has no dot in either (STD-DOTS).
+  - id: STD-ROLLUP
+    rule: >-
+      A service with rollup false keeps its own status, colour, detail, menu
+      entry and actions, but its parent's status and detail are computed as if
+      it were absent, and a top-level one is left out of the aggregate dot. A
+      wrapper whose every child is out of the rollup and that has no check of
+      its own reads unsure. Control actions on a parent still reach it.
+  - id: STD-DOTS
+    rule: >-
+      The daemon owns which top-level services are hidden, loads it from the
+      state file at start, and writes the file atomically on every SetShown,
+      keeping lines it does not recognise. A hidden service is still probed,
+      still in GetState with hidden true, left out of the aggregate dot and
+      menu, and has no tray item or panel button. The tray checklist and the
+      Dots tile list every top-level service by name, hidden or not, and change
+      only through SetShown; they hold no copy of the choice.
+      dot_size scales the drawn dot and hide_healthy drops the dot of a green
+      top-level service in per_service layout; both are held by the daemon,
+      persisted into config.yml by one line edit under one lock, and published
+      in GetState. Neither changes a status, colour, rollup or the hidden set.
+  - id: STD-INTENDED-ACTION-NOT-FLAP
+    rule: Flips inside boot_grace after a control action issued through livedot are not counted toward flapping.
+  - id: STD-ICON
+    rule: >-
+      A service with an icon is drawn as that SVG with its status color in a
+      corner badge, in the tray item and in menus that list it. A service
+      without an icon, and one whose icon cannot be read or drawn, is the plain
+      dot; an unusable icon never stops the daemon or the tray. The daemon only
+      passes the path on in the snapshot; the front end reads the file.
+  - id: STD-PROMPT
+    rule: >-
+      A prompt service probes nothing. Text handed to it (D-Bus Prompt, livedot
+      prompt, the tray text box) is trimmed, refused when empty or over 65536
+      bytes, and written to the standard input of its command, which runs in
+      its own process group with LIVEDOT_SERVICE set and is killed with that
+      group after its timeout. One run at a time; a second is refused as busy.
+      The dot is green when idle or after a run that exited 0, yellow (working)
+      during a run, red after a run that exited non-zero or timed out, until
+      the next run. The daemon keeps no copy of the text. A button is a
+      further command on the same service under the same rules: it shares the
+      one-run-at-a-time limit and the dot with the service, and its command
+      also gets LIVEDOT_BUTTON set to the button name.
+  - id: STD-URL
+    rule: >-
+      A service with a url gets an Open in browser entry in its menu, at any
+      depth, whatever its status. The front end hands the address to the
+      desktop's default handler (xdg-open in the tray and in livedot open); the
+      daemon only passes it on in the snapshot and never fetches it. A click on
+      the tray item of a top-level service that has a url and no prompt opens it;
+      one with no url and no prompt runs the first action of its first item.
+  - id: STD-COMMAND-CHECK
+    rule: >-
+      A command check runs its command in its own process group, killed with
+      that group after the check timeout, under the same probe limits as every
+      other check. Exit 0 is a pass and non-zero a failure; when standard
+      output is one JSON object, its status (up, down, unsure, booting) decides
+      instead for an exit 0, and its detail replaces the exit-code detail. The
+      items it reports are held with the leaf's state and replaced by every
+      probe; a probe whose output is not that JSON object reports no items.
+  - id: STD-ITEMS
+    rule: >-
+      A service's items are listed in its menu after its own entries, each
+      that is not a switch as a submenu named by its label, holding its detail and one entry per item
+      action that applies. An item action runs only for an item the service
+      reports in the current snapshot and an action that item lists; its command
+      comes from the config, never from the check output; it shares the
+      one-run-at-a-time limit and last-action record with the service's other
+      actions, and wakes the check when it ends so the items refresh. The tray
+      tooltip names the first item.
+  - id: STD-MENU-NAME
+    rule: >-
+      The first line of a service's menu is its name, then its status and
+      detail, with the service's icon and status badge (or its plain dot)
+      beside it. In the tray, every other entry carries a freedesktop icon
+      name: start, stop, restart, Open in browser, Ask, and each button (its
+      own icon, or the edit icon), and each item action (its own icon, or none). Whether the icons show is up to the desktop's menu renderer.
+  - id: STD-SWITCH
+    rule: >-
+      An item whose check output carries a boolean checked is a switch. The
+      tray draws it as a checkmark row with that state, and the GNOME extension
+      as a switch row in a Quick Settings tile for its service, titled by the
+      service name and subtitled with how many of its switches are on. Flipping
+      either runs the item's first action under the STD-ITEMS rules, so the
+      check output decides what a flip does (a switch that is on lists its off
+      action first). The front ends hold no switch state of their own; the
+      next probe, woken by the action, redraws them. Clicking the tile body
+      opens its menu and flips nothing.
+  - id: STD-LABEL
+    rule: >-
+      A command check's JSON label (trimmed, cut to 32 characters, dropped when
+      empty) is held with the leaf's state and replaced exactly when its items
+      are: by every probe whose command ran to completion, and kept when the
+      command timed out or could not start. The snapshot carries it as the
+      service's label. The tray publishes it as the XAyatanaLabel property of
+      the service's own tray item in per_service layout, and emits
+      XAyatanaNewLabel when it changes; the aggregate item and child services
+      carry no label, and a tray host that does not read XAyatanaLabel shows the
+      dot alone. The GNOME extension draws it as text beside the service's
+      panel dot when it draws panel dots.
+  - id: STD-STATS
+    rule: >-
+      livedot stats only reads (the mount table, statvfs, /proc/meminfo,
+      /proc/loadavg), spawns nothing and opens no network connection, so its
+      command check stays inside the check timeout. It prints one JSON object
+      whose items are switch rows with the single action show, the selected one
+      checked, and whose label is the selected item's short text; the selection
+      comes from the state file and falls back to free space on /. Only
+      livedot stats show writes the state file, atomically, after checking the
+      id against the mount table and the fixed ids without calling statvfs.
